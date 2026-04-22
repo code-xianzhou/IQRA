@@ -85,11 +85,17 @@ const handleLogin = async () => {
 
     loading.value = true
     try {
-      const user = await login(loginForm)
-      userStore.setUser(user)
-      localStorage.setItem('token', 'login-token-' + user.id)
+      const result = await login(loginForm)
+      userStore.setUser(result.user)
+      localStorage.setItem('token', 'login-token-' + result.user.id)
       ElMessage.success('登录成功')
-      router.push('/')
+
+      // 检查是否首次登录
+      if (result.firstLogin) {
+        router.push('/change-password')
+      } else {
+        router.push('/')
+      }
     } catch (e) {
       // Error already handled by interceptor
     } finally {

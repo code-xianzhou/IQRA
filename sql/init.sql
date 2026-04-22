@@ -13,6 +13,8 @@ CREATE TABLE IF NOT EXISTS `user` (
     `department` VARCHAR(100) COMMENT '部门',
     `email` VARCHAR(100) COMMENT '邮箱',
     `phone` VARCHAR(20) COMMENT '手机号',
+    `role` VARCHAR(20) DEFAULT 'USER' COMMENT '角色: ADMIN-管理员, USER-普通用户',
+    `first_login` TINYINT DEFAULT 1 COMMENT '是否首次登录: 0-否, 1-是',
     `status` TINYINT DEFAULT 1 COMMENT '状态: 0-禁用, 1-启用',
     `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP,
     `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -132,9 +134,9 @@ CREATE TABLE IF NOT EXISTS `model_config` (
 -- Insert default data
 
 -- Default user (password: admin123)
-INSERT INTO `user` (`username`, `password`, `real_name`, `department`, `status`) VALUES
-('admin', 'admin123', 'Admin', 'TechDept', 1),
-('zhangsan', '123456', 'ZhangSan', 'TechDept', 1);
+INSERT INTO `user` (`username`, `password`, `real_name`, `department`, `role`, `first_login`, `status`) VALUES
+('admin', 'admin123', 'Admin', 'TechDept', 'ADMIN', 0, 1),
+('zhangsan', '123456', 'ZhangSan', 'TechDept', 'USER', 0, 1);
 
 -- Default models
 INSERT INTO `model_config` (`model_id`, `model_name`, `model_type`, `base_url`, `port`, `api_path`, `timeout`, `temperature`, `max_tokens`, `enabled`, `is_default`, `status`) VALUES

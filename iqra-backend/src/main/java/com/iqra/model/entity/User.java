@@ -24,6 +24,10 @@ public class User {
 
     private String phone;
 
+    private String role; // ADMIN / USER
+
+    private Integer firstLogin; // 0-否, 1-是
+
     private Integer status;
 
     @TableField(fill = FieldFill.INSERT)

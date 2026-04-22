@@ -35,17 +35,21 @@
             <el-icon><ChatLineSquare /></el-icon>
             <span>智能问答</span>
           </el-menu-item>
-          <el-menu-item index="/document">
+          <el-menu-item v-if="isAdmin" index="/document">
             <el-icon><Document /></el-icon>
             <span>文档管理</span>
           </el-menu-item>
-          <el-menu-item index="/skill">
+          <el-menu-item v-if="isAdmin" index="/skill">
             <el-icon><Tools /></el-icon>
             <span>技能管理</span>
           </el-menu-item>
-          <el-menu-item index="/config">
+          <el-menu-item v-if="isAdmin" index="/config">
             <el-icon><Setting /></el-icon>
             <span>系统配置</span>
+          </el-menu-item>
+          <el-menu-item v-if="isAdmin" index="/user">
+            <el-icon><User /></el-icon>
+            <span>账户管理</span>
           </el-menu-item>
         </el-menu>
       </el-aside>
@@ -59,6 +63,7 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { useUserStore } from '@/store/user'
 import { logout } from '@/api/auth'
 import { useRouter } from 'vue-router'
@@ -66,6 +71,8 @@ import { ElMessage } from 'element-plus'
 
 const userStore = useUserStore()
 const router = useRouter()
+
+const isAdmin = computed(() => userStore.role === 'ADMIN')
 
 const handleCommand = async (command) => {
   if (command === 'logout') {

@@ -5,7 +5,8 @@ export const useUserStore = defineStore('user', {
     id: null,
     username: '',
     realName: '',
-    department: ''
+    department: '',
+    role: ''
   }),
   actions: {
     setUser(user) {
@@ -13,11 +14,14 @@ export const useUserStore = defineStore('user', {
       this.username = user.username
       this.realName = user.realName
       this.department = user.department
+      this.role = user.role
       localStorage.setItem('userId', user.id)
+      localStorage.setItem('role', user.role)
     },
     clearUser() {
       this.$reset()
       localStorage.removeItem('userId')
+      localStorage.removeItem('role')
     }
   }
 })
