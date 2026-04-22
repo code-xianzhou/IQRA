@@ -131,25 +131,28 @@ const loadModels = async () => {
 const loadHistory = async () => {
   try {
     historyList.value = await getHistory({ userId })
-    // Group by sessionId
+    // Group by sessionId; for null sessionId, treat each as its own session
     const groups = {}
+    let nullCounter = 0
     for (const item of historyList.value) {
-      if (!item.sessionId) continue
-      if (!groups[item.sessionId]) {
-        groups[item.sessionId] = {
-          sessionId: item.sessionId,
+      const key = item.sessionId || ('null_sess_' + (nullCounter++))
+      if (!groups[key]) {
+        groups[key] = {
+          sessionId: item.sessionId || key,
           question: item.question,
           modelUsed: item.modelUsed,
           createTime: item.createTime,
-          count: 0
+          count: 0,
+          hasNullSession: !item.sessionId
         }
       }
-      groups[item.sessionId].count++
+      groups[key].count++
     }
     sessionGroups.value = Object.values(groups).sort((a, b) =>
       new Date(b.createTime) - new Date(a.createTime)
     )
   } catch (e) {
+    console.error('loadHistory failed', e)
   }
 }
 
@@ -202,10 +205,30 @@ const switchSession = async (sessionId) => {
   currentSession.value = sessionId
   messages.value = []
 
-  // Load all messages for this specific session from backend
-  const sessionHistory = await getHistory({ userId, sessionId })
+  // For null-session items, load by matching the synthetic key
+  const isNullSession = sessionId && sessionId.startsWith('null_sess_')
+  let sessionHistory
+
+  if (isNullSession) {
+    // Load all history and filter client-side for null sessionId items
+    const allHistory = await getHistory({ userId })
+    // Get the first N items with null sessionId that match this group
+    let counter = 0
+    const targetIndex = parseInt(sessionId.replace('null_sess_', ''))
+    sessionHistory = []
+    for (const item of allHistory) {
+      if (!item.sessionId) {
+        if (counter === targetIndex) {
+          sessionHistory.push(item)
+        }
+        counter++
+      }
+    }
+  } else {
+    sessionHistory = await getHistory({ userId, sessionId })
+  }
+
   if (sessionHistory.length > 0) {
-    // Sort by createTime ascending (oldest first)
     const sorted = sessionHistory.sort((a, b) =>
       new Date(a.createTime) - new Date(b.createTime)
     )
