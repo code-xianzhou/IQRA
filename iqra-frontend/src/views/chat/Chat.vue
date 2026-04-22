@@ -165,6 +165,12 @@ const sendMessage = async () => {
   question.value = ''
   loading.value = true
 
+  // Create new session BEFORE sending message, so sessionId is consistent
+  if (!currentSession.value) {
+    currentSession.value = 'sess_' + Date.now()
+    sessionTitle.value = currentQuestion.substring(0, 20)
+  }
+
   try {
     const res = await ask({
       userId,
@@ -184,12 +190,6 @@ const sendMessage = async () => {
     if (res.references && res.references.length > 0) {
       currentReferences.value = res.references
       showReferences.value = true
-    }
-
-    // Create new session if first message
-    if (!currentSession.value) {
-      currentSession.value = 'sess_' + Date.now()
-      sessionTitle.value = currentQuestion.substring(0, 20)
     }
 
     await loadHistory()
