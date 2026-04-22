@@ -14,11 +14,14 @@
             :class="['history-item', { active: currentSession === item.sessionId }]"
             @click="switchSession(item.sessionId)"
           >
-            <div class="history-title">{{ item.question?.substring(0, 20) || '新对话' }}</div>
-            <div class="history-meta">
-              <span>{{ item.modelUsed }}</span>
-              <span>{{ formatTime(item.createTime) }}</span>
+            <div class="history-info">
+              <div class="history-title">{{ item.firstQuestion?.substring(0, 20) || '新对话' }}</div>
+              <div class="history-meta">
+                <span>{{ item.messageCount }} 条消息</span>
+                <span>{{ formatTime(item.lastTime) }}</span>
+              </div>
             </div>
+            <el-icon class="delete-btn" @click.stop="deleteSession(item.sessionId)"><Close /></el-icon>
           </div>
           <el-empty v-if="sessionGroups.length === 0" description="暂无历史对话" />
         </div>
@@ -97,11 +100,10 @@
 <script setup>
 import { ref, reactive, onMounted, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
-import { ask, getHistory } from '@/api/chat'
+import { ask, getHistory, deleteHistory } from '@/api/chat'
 import { getModelConfig } from '@/api/model'
 
 const messages = ref([])
-const historyList = ref([])
 const loading = ref(false)
 const question = ref('')
 const selectedModel = ref('qwen2-7b')
@@ -112,7 +114,7 @@ const showReferences = ref(false)
 const currentReferences = ref([])
 const messagesRef = ref(null)
 
-// Group history by sessionId
+// Each session: { sessionId, firstQuestion, messageCount, lastTime }
 const sessionGroups = ref([])
 
 const userId = localStorage.getItem('userId') || 'admin'
@@ -128,31 +130,46 @@ const loadModels = async () => {
   }
 }
 
-const loadHistory = async () => {
+const loadSessionList = async () => {
   try {
-    historyList.value = await getHistory({ userId })
-    // Group by sessionId; for null sessionId, treat each as its own session
+    // Load all history (no sessionId filter)
+    const allHistory = await getHistory({ userId })
+
+    // Group by sessionId
     const groups = {}
-    let nullCounter = 0
-    for (const item of historyList.value) {
-      const key = item.sessionId || ('null_sess_' + (nullCounter++))
-      if (!groups[key]) {
-        groups[key] = {
-          sessionId: item.sessionId || key,
-          question: item.question,
-          modelUsed: item.modelUsed,
-          createTime: item.createTime,
-          count: 0,
-          hasNullSession: !item.sessionId
+    for (const item of allHistory) {
+      const sid = item.sessionId
+      if (!sid) continue
+
+      if (!groups[sid]) {
+        groups[sid] = {
+          sessionId: sid,
+          firstQuestion: item.question,
+          messageCount: 0,
+          lastTime: item.createTime,
+          // Store items sorted by createTime for later retrieval
+          _items: []
         }
       }
-      groups[key].count++
+      groups[sid].messageCount++
+      groups[sid].lastTime = item.createTime // already ordered DESC, so first item = latest
+      groups[sid]._items.push(item)
     }
-    sessionGroups.value = Object.values(groups).sort((a, b) =>
-      new Date(b.createTime) - new Date(a.createTime)
-    )
+
+    // For each group, firstQuestion should be the OLDEST question
+    for (const sid in groups) {
+      const items = groups[sid]._items
+      // Sort ascending to get the first question
+      items.sort((a, b) => new Date(a.createTime) - new Date(b.createTime))
+      groups[sid].firstQuestion = items[0].question
+    }
+
+    // Sort sessions by lastTime descending (most recent first)
+    sessionGroups.value = Object.values(groups)
+      .sort((a, b) => new Date(b.lastTime) - new Date(a.lastTime))
+
   } catch (e) {
-    console.error('loadHistory failed', e)
+    console.error('loadSessionList failed', e)
   }
 }
 
@@ -165,8 +182,9 @@ const sendMessage = async () => {
   question.value = ''
   loading.value = true
 
-  // Create new session BEFORE sending message, so sessionId is consistent
-  if (!currentSession.value) {
+  // Create session BEFORE sending if this is a new conversation
+  const isNewSession = !currentSession.value
+  if (isNewSession) {
     currentSession.value = 'sess_' + Date.now()
     sessionTitle.value = currentQuestion.substring(0, 20)
   }
@@ -192,7 +210,8 @@ const sendMessage = async () => {
       showReferences.value = true
     }
 
-    await loadHistory()
+    // Refresh session list (new message added to DB)
+    await loadSessionList()
   } catch (e) {
     ElMessage.error('回答失败: ' + (e.message || '未知错误'))
   } finally {
@@ -203,48 +222,36 @@ const sendMessage = async () => {
 
 const switchSession = async (sessionId) => {
   currentSession.value = sessionId
+
+  // Load all messages for this session from backend
+  const sessionHistory = await getHistory({ userId, sessionId })
+  if (sessionHistory.length === 0) {
+    messages.value = []
+    sessionTitle.value = '空对话'
+    return
+  }
+
+  // Sort by createTime ascending (oldest first)
+  const sorted = sessionHistory.sort((a, b) =>
+    new Date(a.createTime) - new Date(b.createTime)
+  )
+
   messages.value = []
-
-  // For null-session items, load by matching the synthetic key
-  const isNullSession = sessionId && sessionId.startsWith('null_sess_')
-  let sessionHistory
-
-  if (isNullSession) {
-    // Load all history and filter client-side for null sessionId items
-    const allHistory = await getHistory({ userId })
-    // Get the first N items with null sessionId that match this group
-    let counter = 0
-    const targetIndex = parseInt(sessionId.replace('null_sess_', ''))
-    sessionHistory = []
-    for (const item of allHistory) {
-      if (!item.sessionId) {
-        if (counter === targetIndex) {
-          sessionHistory.push(item)
-        }
-        counter++
-      }
-    }
-  } else {
-    sessionHistory = await getHistory({ userId, sessionId })
+  for (const item of sorted) {
+    messages.value.push({ role: 'user', content: item.question })
+    messages.value.push({
+      role: 'assistant',
+      content: item.answer,
+      references: item.references ? JSON.parse(item.references || '[]') : [],
+      modelUsed: item.modelUsed
+    })
   }
 
-  if (sessionHistory.length > 0) {
-    const sorted = sessionHistory.sort((a, b) =>
-      new Date(a.createTime) - new Date(b.createTime)
-    )
-    for (const item of sorted) {
-      messages.value.push({ role: 'user', content: item.question })
-      messages.value.push({
-        role: 'assistant',
-        content: item.answer,
-        references: item.references ? JSON.parse(item.references || '[]') : [],
-        modelUsed: item.modelUsed
-      })
-    }
-    sessionTitle.value = sorted[0].question?.substring(0, 20) || '历史对话'
-    await nextTick()
-    scrollToBottom()
-  }
+  // Session title = first question, never changes
+  sessionTitle.value = sorted[0].question?.substring(0, 20) || '历史对话'
+
+  await nextTick()
+  scrollToBottom()
 }
 
 const newSession = () => {
@@ -253,6 +260,20 @@ const newSession = () => {
   messages.value = []
   currentReferences.value = []
   showReferences.value = false
+}
+
+const deleteSession = async (sessionId) => {
+  try {
+    await deleteHistory({ userId, sessionId })
+    ElMessage.success('已删除该对话')
+    // If currently viewing this session, clear the chat
+    if (currentSession.value === sessionId) {
+      newSession()
+    }
+    await loadSessionList()
+  } catch (e) {
+    ElMessage.error('删除失败: ' + (e.message || '未知错误'))
+  }
 }
 
 const handleModelSwitch = (modelId) => {
@@ -275,7 +296,7 @@ const scrollToBottom = () => {
 
 onMounted(() => {
   loadModels()
-  loadHistory()
+  loadSessionList()
 })
 </script>
 
@@ -322,14 +343,27 @@ onMounted(() => {
   cursor: pointer;
   margin-bottom: 8px;
   transition: background 0.2s;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
 }
 
 .history-item:hover {
   background: #f5f7fa;
 }
 
+.history-item:hover .delete-btn {
+  opacity: 1;
+}
+
 .history-item.active {
   background: #ecf5ff;
+}
+
+.history-info {
+  flex: 1;
+  min-width: 0;
 }
 
 .history-title {
@@ -346,6 +380,20 @@ onMounted(() => {
   color: #909399;
   display: flex;
   justify-content: space-between;
+}
+
+.delete-btn {
+  opacity: 0;
+  transition: opacity 0.2s;
+  color: #909399;
+  font-size: 14px;
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+
+.delete-btn:hover {
+  color: #f56c6c;
 }
 
 .chat-panel {

@@ -115,6 +115,14 @@ public class ChatServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatHistory>
         this.save(history);
     }
 
+    @Override
+    public void deleteHistoryBySession(String userId, String sessionId) {
+        LambdaQueryWrapper<ChatHistory> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(ChatHistory::getUserId, userId);
+        wrapper.eq(ChatHistory::getSessionId, sessionId);
+        this.remove(wrapper);
+    }
+
     private String buildHistory(String userId, String sessionId) {
         List<ChatHistoryVO> historyList = getHistory(userId, sessionId);
         if (historyList.isEmpty()) {

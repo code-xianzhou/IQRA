@@ -15,4 +15,6 @@ public interface ChatService extends IService<ChatHistory> {
     List<ChatHistoryVO> getHistory(String userId, String sessionId);
 
     void saveHistory(AskRequest request, AskResponse response);
+
+    void deleteHistoryBySession(String userId, String sessionId);
 }

@@ -51,6 +51,10 @@ public class DocumentServiceImpl extends ServiceImpl<DocumentMapper, Document> i
     @Transactional
     public Document uploadDocument(MultipartFile file, String department, String tags, String uploadBy) {
         String originalFilename = file.getOriginalFilename();
+        if (originalFilename == null || originalFilename.isEmpty()) {
+            throw new BusinessException("文件名不能为空");
+        }
+
         String extension = getFileExtension(originalFilename);
 
         // 校验文件类型
@@ -63,20 +67,20 @@ public class DocumentServiceImpl extends ServiceImpl<DocumentMapper, Document> i
             throw new BusinessException("文件大小超过限制: " + (fileStorageConfig.getMaxFileSize() / 1024 / 1024) + "MB");
         }
 
-        // 保存文件
-        String fileName = System.currentTimeMillis() + "_" + originalFilename;
-        Path uploadPath = Paths.get(fileStorageConfig.getUploadPath());
+        // 保存文件 - 使用绝对路径而不是相对路径
+        String uuidFileName = System.currentTimeMillis() + "_" + UUID.randomUUID().toString() + "." + extension;
+        Path uploadPath = Paths.get(fileStorageConfig.getUploadPath()).toAbsolutePath().normalize();
         if (!Files.exists(uploadPath)) {
             try {
                 Files.createDirectories(uploadPath);
             } catch (IOException e) {
-                log.error("创建上传目录失败", e);
+                log.error("创建上传目录失败: {}", uploadPath, e);
                 throw new BusinessException("创建上传目录失败");
             }
         }
 
         try {
-            Path filePath = uploadPath.resolve(fileName);
+            Path filePath = uploadPath.resolve(uuidFileName);
             file.transferTo(filePath.toFile());
         } catch (IOException e) {
             log.error("上传文件失败", e);
@@ -86,7 +90,7 @@ public class DocumentServiceImpl extends ServiceImpl<DocumentMapper, Document> i
         // 保存文档记录
         Document document = new Document();
         document.setFileName(originalFilename);
-        document.setFilePath(uploadPath.resolve(fileName).toString());
+        document.setFilePath(uploadPath.resolve(uuidFileName).toString());
         document.setFileType(extension);
         document.setFileSize(file.getSize());
         document.setUploadBy(uploadBy);
@@ -189,7 +193,13 @@ public class DocumentServiceImpl extends ServiceImpl<DocumentMapper, Document> i
         } catch (Exception e) {
             log.error("文档处理失败: {}", document.getFileName(), e);
             document.setStatus(Constants.DOC_STATUS_FAILED);
-            document.setErrorMessage(e.getMessage());
+
+            // 提供更友好的错误信息
+            String errorMessage = e.getMessage();
+            if (errorMessage != null && errorMessage.contains("ConnectException")) {
+                errorMessage = "Embedding模型服务不可用，请检查Ollama服务是否启动（端口11437）";
+            }
+            document.setErrorMessage(errorMessage);
             this.updateById(document);
         }
     }

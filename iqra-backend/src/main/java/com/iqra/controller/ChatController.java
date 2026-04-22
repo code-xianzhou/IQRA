@@ -29,4 +29,11 @@ public class ChatController {
         List<ChatHistoryVO> history = chatService.getHistory(userId, sessionId);
         return Result.success(history);
     }
+
+    @DeleteMapping("/history")
+    public Result<Void> deleteHistory(@RequestParam String userId,
+                                       @RequestParam String sessionId) {
+        chatService.deleteHistoryBySession(userId, sessionId);
+        return Result.success();
+    }
 }
