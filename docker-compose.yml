@@ -1,0 +1,149 @@
+version: '3.8'
+
+services:
+  # MySQL
+  mysql:
+    image: mysql:8.0
+    container_name: iqra-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root123456
+      MYSQL_DATABASE: iqra_db
+      TZ: Asia/Shanghai
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - mysql_data:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    networks:
+      - iqra-network
+
+  # Milvus Standalone
+  etcd:
+    container_name: iqra-etcd
+    image: quay.io/coreos/etcd:v3.5.5
+    environment:
+      - ETCD_AUTO_COMPACTION_MODE=revision
+      - ETCD_AUTO_COMPACTION_RETENTION=1000
+      - ETCD_QUOTA_BACKEND_BYTES=4294967296
+      - ETCD_SNAPSHOT_COUNT=50000
+    volumes:
+      - etcd_data:/etcd
+    command: etcd -advertise-client-urls=http://127.0.0.1:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
+    healthcheck:
+      test: ["CMD", "etcdctl", "endpoint", "health"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    networks:
+      - iqra-network
+
+  minio:
+    container_name: iqra-minio
+    image: minio/minio:RELEASE.2023-03-20T20-16-18Z
+    environment:
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+    volumes:
+      - minio_data:/minio_data
+    command: minio server /minio_data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    networks:
+      - iqra-network
+
+  milvus:
+    container_name: iqra-milvus
+    image: milvusdb/milvus:v2.4.2
+    command: ["milvus", "run", "standalone"]
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      ETCD_ENDPOINTS: etcd:2379
+      MINIO_ADDRESS: minio:9000
+    volumes:
+      - milvus_data:/var/lib/milvus
+    ports:
+      - "19530:19530"
+      - "9091:9091"
+    depends_on:
+      - etcd
+      - minio
+    networks:
+      - iqra-network
+
+  # Ollama models (simulated - in production, deploy Ollama separately)
+  # ollama-qwen2:
+  #   image: ollama/ollama:latest
+  #   container_name: ollama-qwen2
+  #   ports:
+  #     - "11434:11434"
+  #   volumes:
+  #     - ollama_data:/root/.ollama
+  #   command: serve
+  #   networks:
+  #     - iqra-network
+
+  # ollama-llama3:
+  #   image: ollama/ollama:latest
+  #   container_name: ollama-llama3
+  #   ports:
+  #     - "11435:11434"
+  #   volumes:
+  #     - ollama_data2:/root/.ollama
+  #   networks:
+  #     - iqra-network
+
+  # ollama-chatglm3:
+  #   image: ollama/ollama:latest
+  #   container_name: ollama-chatglm3
+  #   ports:
+  #     - "11436:11434"
+  #   networks:
+  #     - iqra-network
+
+  # Backend (build from source)
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    container_name: iqra-backend
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/iqra_db?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=root123456
+      - MILVUS_HOST=milvus
+      - MILVUS_PORT=19530
+    depends_on:
+      - mysql
+      - milvus
+    networks:
+      - iqra-network
+
+  # Frontend (Nginx)
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+    container_name: iqra-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - iqra-network
+
+volumes:
+  mysql_data:
+  etcd_data:
+  minio_data:
+  milvus_data:
+
+networks:
+  iqra-network:
+    driver: bridge

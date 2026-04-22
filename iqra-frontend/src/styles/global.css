@@ -1,0 +1,45 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Microsoft YaHei', 'Source Han Sans', sans-serif;
+  background-color: #f5f7fa;
+  color: #333;
+}
+
+#app {
+  width: 100%;
+  height: 100vh;
+}
+
+/* Common styles */
+.text-primary {
+  color: #409eff;
+}
+
+.text-success {
+  color: #67c23a;
+}
+
+.text-warning {
+  color: #e6a23c;
+}
+
+.text-danger {
+  color: #f56c6c;
+}
+
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
