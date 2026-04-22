@@ -176,10 +176,26 @@ const sendMessage = async () => {
   }
 }
 
-const switchSession = (sessionId) => {
+const switchSession = async (sessionId) => {
   currentSession.value = sessionId
-  // Load messages for this session from history
   messages.value = []
+
+  // Load all messages for this session from historyList
+  const sessionItems = historyList.value.filter(h => h.sessionId === sessionId)
+  if (sessionItems.length > 0) {
+    for (const item of sessionItems) {
+      messages.value.push({ role: 'user', content: item.question })
+      messages.value.push({
+        role: 'assistant',
+        content: item.answer,
+        references: item.references ? JSON.parse(item.references || '[]') : [],
+        modelUsed: item.modelUsed
+      })
+    }
+    sessionTitle.value = sessionItems[0].question?.substring(0, 20) || '历史对话'
+    await nextTick()
+    scrollToBottom()
+  }
 }
 
 const newSession = () => {

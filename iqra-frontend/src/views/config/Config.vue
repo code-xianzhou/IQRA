@@ -67,14 +67,18 @@
       </el-tab-pane>
 
       <!-- Reranker Config Tab -->
-      <el-tab-pane label="重排序开关" name="reranker">
+      <el-tab-pane label="重排序配置" name="reranker">
         <el-card>
           <el-form label-width="120px">
             <el-form-item label="启用重排序">
               <el-switch v-model="rerankerConfig.enabled" />
             </el-form-item>
             <el-form-item label="重排模型">
-              <el-input v-model="rerankerConfig.model" />
+              <el-select v-model="rerankerConfig.model" style="width: 100%">
+                <el-option label="bge-reranker-base" value="bge-reranker-base" />
+                <el-option label="bge-reranker-large" value="bge-reranker-large" />
+                <el-option label="bge-reranker-v2-m3" value="bge-reranker-v2-m3" />
+              </el-select>
             </el-form-item>
             <el-form-item label="Top K">
               <el-input-number v-model="rerankerConfig.topK" :min="1" :max="20" />

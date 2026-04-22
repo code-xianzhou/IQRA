@@ -144,9 +144,9 @@ INSERT INTO `model_config` (`model_id`, `model_name`, `model_type`, `base_url`, 
 
 -- Default skills
 INSERT INTO `skill_config` (`skill_name`, `skill_type`, `description`, `prompt_template`, `enabled`, `recall_strategy`, `top_k`, `rerank_threshold`) VALUES
-('DocQA', 'DOC_QA', 'Document based QA', 'You are a knowledge assistant. Based on the following reference documents:\n\nReference: {{context}}\nQuestion: {{question}}\n\nPlease give accurate and concise answers.', 1, 'multi', 5, 0.5),
-('Process', 'PROCESS', 'Process handling for leave, reimbursement, onboarding', 'You are a process guide assistant. Question: {{question}}\n\nProvide detailed process steps based on reference documents.\n\nReference: {{context}}', 1, 'multi', 5, 0.4),
-('ToolQuery', 'TOOL_QUERY', 'Query employee info and attendance', 'You are a data query assistant.\nQuestion: {{question}}\nAnswer based on system provided data.', 1, 'keyword', 3, 0.6);
+('DocQA', 'DOC_QA', '基于文档的智能问答，通过检索企业内部知识库提供准确答案', '你是一个知识助手。基于以下参考文档：\n\n参考内容：{{context}}\n问题：{{question}}\n\n请给出准确简洁的回答。', 1, 'multi', 5, 0.5),
+('Process', 'PROCESS', '流程办理助手，支持请假、报销、入职等流程咨询', '你是流程引导助手。问题：{{question}}\n\n请基于参考文档提供详细的流程步骤。\n\n参考内容：{{context}}', 1, 'multi', 5, 0.4),
+('ToolQuery', 'TOOL_QUERY', '工具调用查询，支持员工信息、考勤等数据查询', '你是数据查询助手。\n问题：{{question}}\n请基于系统提供的数据回答。', 1, 'vector', 3, 0.7);
 
 -- Default prompt template
 INSERT INTO `prompt_template` (`template_name`, `template_type`, `content`) VALUES

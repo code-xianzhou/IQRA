@@ -159,7 +159,7 @@ const handleUpload = async () => {
   try {
     await uploadDocument(selectedFile.value, {
       ...uploadForm,
-      uploadBy: localStorage.getItem('userId') || 'system'
+      uploadBy: localStorage.getItem('username') || 'admin'
     })
     ElMessage.success('上传成功，文档正在解析中')
     showUploadDialog.value = false
@@ -168,6 +168,7 @@ const handleUpload = async () => {
     uploadForm.tags = ''
     loadDocuments()
   } catch (e) {
+    ElMessage.error('上传文件失败: ' + (e.message || '未知错误'))
   } finally {
     uploading.value = false
   }
