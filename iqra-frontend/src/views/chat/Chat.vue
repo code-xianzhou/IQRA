@@ -9,8 +9,8 @@
         </div>
         <div class="history-list">
           <div
-            v-for="item in historyList"
-            :key="item.id"
+            v-for="item in sessionGroups"
+            :key="item.sessionId"
             :class="['history-item', { active: currentSession === item.sessionId }]"
             @click="switchSession(item.sessionId)"
           >
@@ -20,7 +20,7 @@
               <span>{{ formatTime(item.createTime) }}</span>
             </div>
           </div>
-          <el-empty v-if="historyList.length === 0" description="暂无历史对话" />
+          <el-empty v-if="sessionGroups.length === 0" description="暂无历史对话" />
         </div>
       </div>
 
@@ -112,6 +112,9 @@ const showReferences = ref(false)
 const currentReferences = ref([])
 const messagesRef = ref(null)
 
+// Group history by sessionId
+const sessionGroups = ref([])
+
 const userId = localStorage.getItem('userId') || 'admin'
 
 const loadModels = async () => {
@@ -128,6 +131,24 @@ const loadModels = async () => {
 const loadHistory = async () => {
   try {
     historyList.value = await getHistory({ userId })
+    // Group by sessionId
+    const groups = {}
+    for (const item of historyList.value) {
+      if (!item.sessionId) continue
+      if (!groups[item.sessionId]) {
+        groups[item.sessionId] = {
+          sessionId: item.sessionId,
+          question: item.question,
+          modelUsed: item.modelUsed,
+          createTime: item.createTime,
+          count: 0
+        }
+      }
+      groups[item.sessionId].count++
+    }
+    sessionGroups.value = Object.values(groups).sort((a, b) =>
+      new Date(b.createTime) - new Date(a.createTime)
+    )
   } catch (e) {
   }
 }
@@ -162,14 +183,15 @@ const sendMessage = async () => {
       showReferences.value = true
     }
 
-    // Update session
+    // Create new session if first message
     if (!currentSession.value) {
-      currentSession.value = Date.now().toString()
+      currentSession.value = 'sess_' + Date.now()
       sessionTitle.value = currentQuestion.substring(0, 20)
     }
 
     await loadHistory()
   } catch (e) {
+    ElMessage.error('回答失败: ' + (e.message || '未知错误'))
   } finally {
     loading.value = false
     scrollToBottom()
@@ -180,10 +202,14 @@ const switchSession = async (sessionId) => {
   currentSession.value = sessionId
   messages.value = []
 
-  // Load all messages for this session from historyList
-  const sessionItems = historyList.value.filter(h => h.sessionId === sessionId)
-  if (sessionItems.length > 0) {
-    for (const item of sessionItems) {
+  // Load all messages for this specific session from backend
+  const sessionHistory = await getHistory({ userId, sessionId })
+  if (sessionHistory.length > 0) {
+    // Sort by createTime ascending (oldest first)
+    const sorted = sessionHistory.sort((a, b) =>
+      new Date(a.createTime) - new Date(b.createTime)
+    )
+    for (const item of sorted) {
       messages.value.push({ role: 'user', content: item.question })
       messages.value.push({
         role: 'assistant',
@@ -192,7 +218,7 @@ const switchSession = async (sessionId) => {
         modelUsed: item.modelUsed
       })
     }
-    sessionTitle.value = sessionItems[0].question?.substring(0, 20) || '历史对话'
+    sessionTitle.value = sorted[0].question?.substring(0, 20) || '历史对话'
     await nextTick()
     scrollToBottom()
   }
