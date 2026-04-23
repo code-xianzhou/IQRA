@@ -42,4 +42,10 @@ public class UserController {
         userService.resetFirstLogin(id);
         return Result.success();
     }
+
+    @PostMapping("/reset-password/{id}")
+    public Result<Void> resetPassword(@PathVariable Long id) {
+        userService.resetPassword(id);
+        return Result.success();
+    }
 }

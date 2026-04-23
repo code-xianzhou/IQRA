@@ -19,4 +19,6 @@ public interface UserService extends IService<User> {
     boolean changePassword(Long userId, String oldPassword, String newPassword);
 
     boolean resetFirstLogin(Long userId);
+
+    boolean resetPassword(Long userId);
 }

@@ -96,4 +96,19 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         user.setFirstLogin(1);
         return this.updateById(user);
     }
+
+    @Override
+    public boolean resetPassword(Long userId) {
+        User user = this.getById(userId);
+        if (user == null) {
+            throw new BusinessException("用户不存在");
+        }
+        if ("admin".equals(user.getUsername())) {
+            throw new BusinessException("admin 管理员账户不可重置密码");
+        }
+        // 重置密码为用户名
+        user.setPassword(user.getUsername());
+        user.setFirstLogin(1); // 重置密码后需要首次登录修改密码
+        return this.updateById(user);
+    }
 }
