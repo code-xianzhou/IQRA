@@ -6,4 +6,6 @@ import org.apache.ibatis.annotations.Mapper;
 
 @Mapper
 public interface ChatHistoryMapper extends BaseMapper<ChatHistory> {
+    // 根据用户ID删除所有问答记录
+    void deleteByUserId(String userId);
 }

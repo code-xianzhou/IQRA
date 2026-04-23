@@ -11,7 +11,7 @@
     <!-- User Table -->
     <el-table :data="users" v-loading="loading" stripe>
       <el-table-column prop="username" label="用户名" width="120" />
-      <el-table-column prop="realName" label="姓名" width="120" />
+
       <el-table-column prop="department" label="部门" width="150" />
       <el-table-column prop="email" label="邮箱" width="180" />
       <el-table-column prop="phone" label="手机号" width="130" />
@@ -62,9 +62,7 @@
         <el-form-item label="密码" prop="password">
           <el-input v-model="createForm.password" type="password" placeholder="请设置初始密码（至少6位）" show-password />
         </el-form-item>
-        <el-form-item label="姓名" prop="realName">
-          <el-input v-model="createForm.realName" placeholder="请输入姓名" />
-        </el-form-item>
+
         <el-form-item label="部门">
           <el-input v-model="createForm.department" placeholder="请输入部门" />
         </el-form-item>
@@ -104,7 +102,7 @@ const createFormRef = ref(null)
 const createForm = reactive({
   username: '',
   password: '',
-  realName: '',
+
   department: '',
   email: '',
   phone: '',
@@ -117,7 +115,15 @@ const createRules = {
     { required: true, message: '请设置初始密码', trigger: 'blur' },
     { min: 6, message: '密码长度不能少于6位', trigger: 'blur' }
   ],
-  realName: [{ required: true, message: '请输入姓名', trigger: 'blur' }]
+
+  email: [
+    { required: true, message: '请输入邮箱', trigger: 'blur' },
+    { type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' }
+  ],
+  phone: [
+    { required: true, message: '请输入手机号', trigger: 'blur' },
+    { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号格式', trigger: 'blur' }
+  ]
 }
 
 const loadUsers = async () => {
@@ -145,7 +151,7 @@ const handleCreate = async () => {
       Object.assign(createForm, {
         username: '',
         password: '',
-        realName: '',
+
         department: '',
         email: '',
         phone: '',
