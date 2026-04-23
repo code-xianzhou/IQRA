@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS `user` (
     `username` VARCHAR(50) NOT NULL UNIQUE COMMENT '登录账号',
     `password` VARCHAR(100) NOT NULL COMMENT '密码',
     `real_name` VARCHAR(50) COMMENT '真实姓名',
-    `department` VARCHAR(100) COMMENT '部门',
+    `department_id` BIGINT COMMENT '所属部门ID',
     `email` VARCHAR(100) COMMENT '邮箱',
     `phone` VARCHAR(20) COMMENT '手机号',
     `role` VARCHAR(20) DEFAULT 'USER' COMMENT '角色: ADMIN-管理员, USER-普通用户',
@@ -130,6 +130,20 @@ CREATE TABLE IF NOT EXISTS `model_config` (
     `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP,
     `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='大模型配置表';
+
+-- Department table
+CREATE TABLE IF NOT EXISTS `department` (
+    `id` bigint NOT NULL AUTO_INCREMENT,
+    `name` varchar(255) NOT NULL COMMENT '部门名称',
+    `parent_id` bigint NOT NULL DEFAULT '0' COMMENT '父部门ID，根部门为0',
+    `level` int NOT NULL COMMENT '部门级别，根部门为1',
+    `status` int NOT NULL DEFAULT '1' COMMENT '状态：1-正常，0-禁用',
+    `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    KEY `idx_parent_id` (`parent_id`),
+    KEY `idx_status` (`status`)
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='部门表';
 
 -- Insert default data
 

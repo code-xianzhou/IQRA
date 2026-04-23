@@ -3,7 +3,6 @@
     <!-- Toolbar -->
     <div class="toolbar">
       <el-button type="primary" @click="showCreateDialog = true">
-        <el-icon><Plus /></el-icon>
         新增用户
       </el-button>
     </div>
@@ -11,8 +10,7 @@
     <!-- User Table -->
     <el-table :data="users" v-loading="loading" stripe>
       <el-table-column prop="username" label="用户名" width="120" />
-
-      <el-table-column prop="department" label="部门" width="150" />
+      <el-table-column prop="departmentName" label="部门" width="120" />
       <el-table-column prop="email" label="邮箱" width="180" />
       <el-table-column prop="phone" label="手机号" width="130" />
       <el-table-column prop="role" label="角色" width="100">
@@ -62,14 +60,13 @@
         <el-form-item label="密码" prop="password">
           <el-input v-model="createForm.password" type="password" placeholder="请设置初始密码（至少6位）" show-password />
         </el-form-item>
-
-        <el-form-item label="部门" prop="department">
-          <el-select v-model="createForm.department" placeholder="请选择部门">
+        <el-form-item label="部门" prop="departmentId">
+          <el-select v-model="createForm.departmentId" placeholder="请选择部门">
             <el-option
               v-for="dept in departments"
               :key="dept.id"
               :label="dept.name"
-              :value="dept.name"
+              :value="dept.id"
             />
           </el-select>
         </el-form-item>
@@ -111,8 +108,7 @@ const createFormRef = ref(null)
 const createForm = reactive({
   username: '',
   password: '',
-
-  department: '',
+  departmentId: null,
   email: '',
   phone: '',
   role: 'USER'
@@ -132,7 +128,7 @@ const createRules = {
     { required: true, message: '请输入手机号', trigger: 'blur' },
     { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号格式', trigger: 'blur' }
   ],
-  department: [{ required: true, message: '请选择部门', trigger: 'blur' }]
+  departmentId: [{ required: true, message: '请选择部门', trigger: 'blur' }]
 }
 
 const loadUsers = async () => {
@@ -180,8 +176,7 @@ const handleCreate = async () => {
       Object.assign(createForm, {
         username: '',
         password: '',
-
-        department: '',
+        departmentId: null,
         email: '',
         phone: '',
         role: 'USER'

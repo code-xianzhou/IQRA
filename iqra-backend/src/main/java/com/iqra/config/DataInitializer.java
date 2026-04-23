@@ -33,7 +33,7 @@ public class DataInitializer implements CommandLineRunner {
             admin.setUsername("admin");
             admin.setPassword("admin");
             admin.setRealName("管理员");
-            admin.setDepartment("根部门");
+            admin.setDepartmentId(1L); // 根部门ID
             admin.setEmail("admin@example.com");
             admin.setPhone("13800138000");
             admin.setRole("ADMIN");

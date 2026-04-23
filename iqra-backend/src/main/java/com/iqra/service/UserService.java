@@ -3,6 +3,7 @@ package com.iqra.service;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.iqra.model.dto.CreateUserRequest;
 import com.iqra.model.entity.User;
+import com.iqra.model.vo.UserVO;
 
 import java.util.List;
 
@@ -12,7 +13,11 @@ public interface UserService extends IService<User> {
 
     List<User> getAllUsers();
 
+    List<UserVO> getAllUserVOs();
+
     User createUser(CreateUserRequest request);
+
+    User updateUser(User user);
 
     boolean deleteUser(Long id);
 

@@ -25,12 +25,10 @@
 
     <!-- 检查部门下是否有用户 -->
     <select id="countUsersInDepartments" resultType="java.lang.Integer">
-        SELECT COUNT(*) FROM user WHERE department IN (
-        SELECT name FROM department WHERE id IN (
-        <foreach collection="departmentIds" item="id" separator=",">
-            #{id}
-        </foreach>
-        )
+        SELECT COUNT(*) FROM user WHERE department_id IN (
+            <foreach collection="departmentIds" item="id" separator=",">
+                #{id}
+            </foreach>
         )
     </select>
 

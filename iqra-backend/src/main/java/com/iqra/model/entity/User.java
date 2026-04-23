@@ -18,7 +18,7 @@ public class User {
 
     private String realName;
 
-    private String department;
+    private Long departmentId; // 部门ID
 
     private String email;
 

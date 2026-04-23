@@ -3,16 +3,25 @@ package com.iqra.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.iqra.common.BusinessException;
+import com.iqra.mapper.ChatHistoryMapper;
+import com.iqra.mapper.DepartmentMapper;
 import com.iqra.mapper.UserMapper;
 import com.iqra.model.dto.CreateUserRequest;
+import com.iqra.model.entity.Department;
 import com.iqra.model.entity.User;
+import com.iqra.model.vo.UserVO;
 import com.iqra.service.UserService;
 import org.springframework.stereotype.Service;
+import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
+
+    private final ChatHistoryMapper chatHistoryMapper;
+    private final DepartmentMapper departmentMapper;
 
     @Override
     public User login(String username, String password) {
@@ -36,6 +45,34 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
 
     @Override
+    public List<UserVO> getAllUserVOs() {
+        List<User> users = getAllUsers();
+        return users.stream().map(user -> {
+            UserVO vo = new UserVO();
+            vo.setId(user.getId());
+            vo.setUsername(user.getUsername());
+            vo.setRealName(user.getRealName());
+            vo.setEmail(user.getEmail());
+            vo.setPhone(user.getPhone());
+            vo.setRole(user.getRole());
+            vo.setFirstLogin(user.getFirstLogin());
+            vo.setStatus(user.getStatus());
+            vo.setCreateTime(user.getCreateTime());
+            vo.setUpdateTime(user.getUpdateTime());
+            
+            // 查询部门名称
+            if (user.getDepartmentId() != null) {
+                Department department = departmentMapper.selectById(user.getDepartmentId());
+                if (department != null) {
+                    vo.setDepartmentName(department.getName());
+                }
+            }
+            
+            return vo;
+        }).collect(java.util.stream.Collectors.toList());
+    }
+
+    @Override
     public User createUser(CreateUserRequest request) {
         // 检查用户名是否已存在
         LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
@@ -48,7 +85,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         user.setUsername(request.getUsername());
         user.setPassword(request.getPassword());
         user.setRealName(request.getRealName());
-        user.setDepartment(request.getDepartment());
+        user.setDepartmentId(request.getDepartmentId());
         user.setEmail(request.getEmail());
         user.setPhone(request.getPhone());
         user.setRole(request.getRole() != null ? request.getRole() : "USER");
@@ -110,5 +147,20 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         user.setPassword(user.getUsername());
         user.setFirstLogin(1); // 重置密码后需要首次登录修改密码
         return this.updateById(user);
+    }
+
+    @Override
+    public User updateUser(User user) {
+        User existing = this.getById(user.getId());
+        if (existing == null) {
+            throw new BusinessException("用户不存在");
+        }
+        // 不允许修改用户名和角色
+        user.setUsername(existing.getUsername());
+        user.setRole(existing.getRole());
+        // 不允许修改密码
+        user.setPassword(existing.getPassword());
+        this.updateById(user);
+        return user;
     }
 }
