@@ -52,6 +52,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             vo.setId(user.getId());
             vo.setUsername(user.getUsername());
             vo.setRealName(user.getRealName());
+            vo.setDepartmentId(user.getDepartmentId());
             vo.setEmail(user.getEmail());
             vo.setPhone(user.getPhone());
             vo.setRole(user.getRole());

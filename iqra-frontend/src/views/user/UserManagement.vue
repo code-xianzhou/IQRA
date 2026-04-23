@@ -3,6 +3,7 @@
     <!-- Toolbar -->
     <div class="toolbar">
       <el-button type="primary" @click="showCreateDialog = true">
+        <el-icon><Plus /></el-icon>
         新增用户
       </el-button>
     </div>
@@ -95,6 +96,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Plus } from '@element-plus/icons-vue'
 import { getUsers, createUser, deleteUser, resetPassword } from '@/api/user'
 import { getDepartmentTree } from '@/api/department'
 

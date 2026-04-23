@@ -3,6 +3,7 @@ package com.iqra.controller;
 import com.iqra.common.Result;
 import com.iqra.model.dto.CreateUserRequest;
 import com.iqra.model.entity.User;
+import com.iqra.model.vo.UserVO;
 import com.iqra.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -17,10 +18,8 @@ public class UserController {
     private final UserService userService;
 
     @GetMapping("/list")
-    public Result<List<User>> list() {
-        List<User> users = userService.getAllUsers();
-        // 隐藏密码
-        users.forEach(u -> u.setPassword("******"));
+    public Result<List<UserVO>> list() {
+        List<UserVO> users = userService.getAllUserVOs();
         return Result.success(users);
     }
 

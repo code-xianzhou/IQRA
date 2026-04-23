@@ -9,6 +9,7 @@ public class UserVO {
     private Long id;
     private String username;
     private String realName;
+    private Long departmentId; // 部门ID
     private String departmentName; // 部门名称
     private String email;
     private String phone;
