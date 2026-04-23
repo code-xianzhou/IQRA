@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.iqra.mapper.DepartmentMapper">
+
+    <!-- 获取部门树结构 -->
+    <select id="getDepartmentTree" resultType="com.iqra.model.entity.Department">
+        SELECT * FROM department WHERE status = 1 ORDER BY parent_id, id
+    </select>
+
+    <!-- 获取指定部门的所有子部门 -->
+    <select id="getChildDepartments" resultType="com.iqra.model.entity.Department">
+        SELECT * FROM department WHERE parent_id = #{parentId} AND status = 1
+    </select>
+
+    <!-- 获取部门及其所有子部门的ID列表 -->
+    <select id="getDepartmentIdsWithChildren" resultType="java.lang.Long">
+        WITH RECURSIVE dept_tree AS (
+            SELECT id FROM department WHERE id = #{departmentId}
+            UNION ALL
+            SELECT d.id FROM department d
+                                 JOIN dept_tree dt ON d.parent_id = dt.id
+        )
+        SELECT id FROM dept_tree
+    </select>
+
+    <!-- 检查部门下是否有用户 -->
+    <select id="countUsersInDepartments" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM user WHERE department IN (
+        SELECT name FROM department WHERE id IN (
+        <foreach collection="departmentIds" item="id" separator=",">
+            #{id}
+        </foreach>
+        )
+        )
+    </select>
+
+</mapper>

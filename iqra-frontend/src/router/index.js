@@ -44,6 +44,12 @@ const routes = [
         name: 'UserManagement',
         component: () => import('@/views/user/UserManagement.vue'),
         meta: { requiresAdmin: true }
+      },
+      {
+        path: 'department',
+        name: 'DepartmentManagement',
+        component: () => import('@/views/department/DepartmentManagement.vue'),
+        meta: { requiresAdmin: true }
       }
     ]
   }

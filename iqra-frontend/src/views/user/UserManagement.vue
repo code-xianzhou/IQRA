@@ -63,8 +63,15 @@
           <el-input v-model="createForm.password" type="password" placeholder="请设置初始密码（至少6位）" show-password />
         </el-form-item>
 
-        <el-form-item label="部门">
-          <el-input v-model="createForm.department" placeholder="请输入部门" />
+        <el-form-item label="部门" prop="department">
+          <el-select v-model="createForm.department" placeholder="请选择部门">
+            <el-option
+              v-for="dept in departments"
+              :key="dept.id"
+              :label="dept.name"
+              :value="dept.name"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item label="邮箱" prop="email">
           <el-input v-model="createForm.email" placeholder="请输入邮箱" />
@@ -92,9 +99,11 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getUsers, createUser, deleteUser, resetPassword } from '@/api/user'
+import { getDepartmentTree } from '@/api/department'
 
 const loading = ref(false)
 const users = ref([])
+const departments = ref([])
 const showCreateDialog = ref(false)
 const creating = ref(false)
 const createFormRef = ref(null)
@@ -115,7 +124,6 @@ const createRules = {
     { required: true, message: '请设置初始密码', trigger: 'blur' },
     { min: 6, message: '密码长度不能少于6位', trigger: 'blur' }
   ],
-
   email: [
     { required: true, message: '请输入邮箱', trigger: 'blur' },
     { type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' }
@@ -123,7 +131,8 @@ const createRules = {
   phone: [
     { required: true, message: '请输入手机号', trigger: 'blur' },
     { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号格式', trigger: 'blur' }
-  ]
+  ],
+  department: [{ required: true, message: '请选择部门', trigger: 'blur' }]
 }
 
 const loadUsers = async () => {
@@ -134,6 +143,26 @@ const loadUsers = async () => {
     ElMessage.error('加载用户列表失败')
   } finally {
     loading.value = false
+  }
+}
+
+const loadDepartments = async () => {
+  try {
+    const deptTree = await getDepartmentTree()
+    // 扁平化部门树
+    const flattenDepartments = []
+    const traverse = (nodes) => {
+      nodes.forEach(node => {
+        flattenDepartments.push(node)
+        if (node.children) {
+          traverse(node.children)
+        }
+      })
+    }
+    traverse(deptTree)
+    departments.value = flattenDepartments
+  } catch (e) {
+    ElMessage.error('加载部门列表失败')
   }
 }
 
@@ -199,6 +228,7 @@ const handleResetPassword = async (row) => {
 
 onMounted(() => {
   loadUsers()
+  loadDepartments()
 })
 </script>
 

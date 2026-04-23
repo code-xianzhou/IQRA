@@ -51,6 +51,10 @@
             <el-icon><User /></el-icon>
             <span>账户管理</span>
           </el-menu-item>
+          <el-menu-item v-if="isAdmin" index="/department">
+            <el-icon><OfficeBuilding /></el-icon>
+            <span>部门管理</span>
+          </el-menu-item>
         </el-menu>
       </el-aside>
 
