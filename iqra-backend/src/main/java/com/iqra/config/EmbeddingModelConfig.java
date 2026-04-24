@@ -14,7 +14,7 @@ public class EmbeddingModelConfig {
     @Value("${langchain4j.embedding.base-url:http://localhost:11437}")
     private String baseUrl;
 
-    @Value("${langchain4j.embedding.model-name:bge-small-zh-v1.5}")
+    @Value("${langchain4j.embedding.model-name:nomic-embed-text}")
     private String modelName;
 
     @Bean

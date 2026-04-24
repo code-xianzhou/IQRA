@@ -42,6 +42,7 @@
           </el-tag>
         </template>
       </el-table-column>
+      <el-table-column prop="errorMessage" label="错误信息" min-width="300" show-overflow-tooltip />
       <el-table-column label="操作" width="150">
         <template #default="{ row }">
           <el-popconfirm

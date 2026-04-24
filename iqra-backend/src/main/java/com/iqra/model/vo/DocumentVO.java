@@ -23,5 +23,7 @@ public class DocumentVO {
 
     private String tags;
 
+    private String errorMessage;
+
     private LocalDateTime createTime;
 }
